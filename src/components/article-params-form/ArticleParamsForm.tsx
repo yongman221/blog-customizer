@@ -57,13 +57,9 @@ export const ArticleParamsForm = ({
       onReset();
     };
 
-    form.addEventListener('submit', (event) => {
-      handleSubmit(event);
-    });
+    form.addEventListener('submit', handleSubmit);
 
-    form.addEventListener('reset', (event) => {
-      handleReset(event);
-    });
+    form.addEventListener('reset', handleReset);
 
     return (): void => {
       form.removeEventListener('submit', handleSubmit);
@@ -83,7 +79,7 @@ export const ArticleParamsForm = ({
             title="шрифт"
           />
           <RadioGroup
-            name="font-size"
+            name="radio"
             options={fontSizeOptions}
             selected={rawStyles.fontSizeOption}
             onChange={(option) => handleChange('fontSizeOption', option)}
