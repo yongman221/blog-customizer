@@ -11,6 +11,7 @@ import {
 import { RadioGroup } from '@/ui/radio-group';
 import { Select } from '@/ui/select';
 import { Separator } from '@/ui/separator';
+import { Text } from '@/ui/text';
 import { clsx } from 'clsx';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { ArrowButton } from 'src/ui/arrow-button';
@@ -27,13 +28,15 @@ export const ArticleParamsForm = ({
   onSubmit,
   onReset,
 }: TArticleParamsFormProps): React.JSX.Element => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [rawStyles, setRawStyles] = useState<ArticleStateType>(defaultArticleState);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [draftArticleState, setDraftArticleState] =
+    useState<ArticleStateType>(defaultArticleState);
 
   const formRef = useRef<HTMLFormElement | null>(null);
+  const sidebarRootRef = useRef<HTMLDivElement | null>(null);
 
   const handleChange = (key: keyof ArticleStateType, option: OptionType): void => {
-    setRawStyles((prev) => ({
+    setDraftArticleState((prev) => ({
       ...prev,
       [key]: option,
     }));
@@ -42,38 +45,62 @@ export const ArticleParamsForm = ({
   useEffect(() => {
     const form = formRef.current;
 
+    if (!isSidebarOpen) {
+      return;
+    }
+
     if (!form) {
       return;
     }
 
+    const handleOutsideMouseDown = (event: MouseEvent): void => {
+      if (
+        event.target instanceof Node &&
+        !sidebarRootRef.current?.contains(event.target)
+      ) {
+        setIsSidebarOpen(false);
+      }
+    };
+
     const handleSubmit = (event: SubmitEvent): void => {
       event.preventDefault();
-      onSubmit(rawStyles);
+      onSubmit(draftArticleState);
     };
 
     const handleReset = (event: Event): void => {
       event.preventDefault();
-      setRawStyles(defaultArticleState);
+      setDraftArticleState(defaultArticleState);
       onReset();
     };
+
+    document.addEventListener('mousedown', handleOutsideMouseDown);
 
     form.addEventListener('submit', handleSubmit);
 
     form.addEventListener('reset', handleReset);
 
     return (): void => {
+      document.removeEventListener('mousedown', handleOutsideMouseDown);
       form.removeEventListener('submit', handleSubmit);
       form.removeEventListener('reset', handleReset);
     };
-  }, [rawStyles, onSubmit, onReset]);
+  }, [isSidebarOpen, draftArticleState, onSubmit, onReset]);
 
   return (
-    <>
-      <ArrowButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
-      <aside className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+    <div ref={sidebarRootRef}>
+      <ArrowButton
+        isOpen={isSidebarOpen}
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+      <aside
+        className={clsx(styles.container, { [styles.container_open]: isSidebarOpen })}
+      >
         <form className={styles.form} ref={formRef}>
+          <Text as="h2" size={31} weight={800} uppercase>
+            Задайте параметры
+          </Text>
           <Select
-            selected={rawStyles.fontFamilyOption}
+            selected={draftArticleState.fontFamilyOption}
             options={fontFamilyOptions}
             onChange={(option) => handleChange('fontFamilyOption', option)}
             title="шрифт"
@@ -81,25 +108,25 @@ export const ArticleParamsForm = ({
           <RadioGroup
             name="radio"
             options={fontSizeOptions}
-            selected={rawStyles.fontSizeOption}
+            selected={draftArticleState.fontSizeOption}
             onChange={(option) => handleChange('fontSizeOption', option)}
             title="размер шрифта"
           />
           <Select
-            selected={rawStyles.fontColor}
+            selected={draftArticleState.fontColor}
             options={fontColors}
             onChange={(option) => handleChange('fontColor', option)}
             title="цвет шрифта"
           />
           <Separator />
           <Select
-            selected={rawStyles.backgroundColor}
+            selected={draftArticleState.backgroundColor}
             options={backgroundColors}
             onChange={(option) => handleChange('backgroundColor', option)}
             title="цвет фона"
           />
           <Select
-            selected={rawStyles.contentWidth}
+            selected={draftArticleState.contentWidth}
             options={contentWidthArr}
             onChange={(option) => handleChange('contentWidth', option)}
             title="ширина контента"
@@ -110,6 +137,6 @@ export const ArticleParamsForm = ({
           </div>
         </form>
       </aside>
-    </>
+    </div>
   );
 };
